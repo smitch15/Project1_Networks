@@ -33,7 +33,7 @@ int main(){
 	// bind(int socket, const struct sockaddr *address, socklen_t address_len);
 	// the bind needs a sockaddr struct so let's make that first
 	
-
+	// set this so that when the socket closes it immediately reopens
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &sockoptval, sizeof(int));
 
 	struct sockaddr_in myaddr;
@@ -43,6 +43,8 @@ int main(){
 	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	myaddr.sin_port = htons(1080);
 
+	//printf("IPv4 address: %u\n", myaddr.sin_addr.s_addr);
+	
 	int bind_success = -1;
 	if ((bind_success = 
 		bind(fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)){
@@ -53,7 +55,7 @@ int main(){
 	printf("bind_success: %d\n", bind_success);
 	
 	/* set the socket for listening (queue backlog of 15) */
-	if (listen(fd, 15) < 0) {
+	if (listen(fd, 6) < 0) {
 		perror("listen error");
 		exit(1);
 	}
@@ -64,8 +66,14 @@ int main(){
 
 	// loop until you accept connections from incoming clients
 	while (1) {
-		while ((rqst = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
-            if ((errno != ECHILD) && (errno != EINTR)) {
+		printf("entering while loop\n");
+		rqst = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);	
+		printf("fd: %d\n", fd);
+		printf("rqst: %d\n", rqst);
+		printf("accept returned...\n");
+		while (rqst < 0) {
+            printf("client address length %d\n\n", client_addr.sin_len);
+			if ((errno != ECHILD) && (errno != EINTR)) {
             	perror("accept failed");
                 exit(1);
         	} 
