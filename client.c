@@ -107,15 +107,23 @@ int main(){
 	char buffIn[256];
 	char buffRead[256];
 	char *exitStr = "exit\n";
+	int strcmpVal = -1;
 	// write
 	printf("enter input: ");
 	fgets(buffIn,256,stdin);
 	printf("input: %s", buffIn);
+	strcmpVal = strcmp(buffIn, exitStr);
+	if (strcmpVal == 0){
+		int shutdown_success = -1;
+		shutdown_success = shutdown(fd, SHUT_RDWR);
+		printf("shutdown success: %d\n", shutdown_success);
+		return 0;
+	}
 	int numBytesWritten = -1;
 	//numBytesWritten = write(fd, buffSend, 20);
 	numBytesWritten = write(fd, buffIn, 256);
 	printf("write success: %d\n", numBytesWritten);
-	int strcmpVal = strcmp(buffIn, exitStr);
+	strcmpVal = strcmp(buffIn, exitStr);
 	printf("strcmpVal: %d\n", strcmpVal);
 	int numBytesRead;
 	// read
@@ -139,6 +147,7 @@ int main(){
 		numBytesWritten = write(fd, buffIn, 256);
 		printf("write success: %d\n", numBytesWritten);
 		strcmpVal = strcmp(buffIn, exitStr);
+		if (strcmpVal == 0)	break;
 		//printf("strcmpVal: %d\n", strcmpVal);
 		//printf("exitStr: %s", exitStr);
 		//printf("buffIn: %s", buffIn);
@@ -153,9 +162,8 @@ int main(){
 		}
 	}
 	int shutdown_success = -1;
-	shutdown_success = shutdown(fd, SHUT_RDWR);
+	shutdown_success = close(fd);
 	printf("shutdown success: %d\n", shutdown_success);
-
 	return 0;
 }
 

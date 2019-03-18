@@ -74,9 +74,9 @@ int main(){
 
 	//inet_ntop(AF_INET, &(sa.sin_addr), buffer, len);
 	//printf("address:%s\n",buffer);
-
+	int strcmpVal = -1;
 	// loop until you accept connections from incoming clients
-	while (1) {
+	while (strcmpVal != 0){
 		while ((rqst = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
 			printf("accept finished\n");
 			printf("request: %d\n", rqst);
@@ -92,7 +92,6 @@ int main(){
 		int numBytesRead;
 		char buffWrite[256];
 		char *exitStr = "exit\n";
-		int strcmpVal = 5;
 		int numBytesWritten = -1;
 		while (strcmpVal != 0){
 			bzero(buffRead, sizeof(buffRead)); 
@@ -116,21 +115,27 @@ int main(){
 				perror("write error");
 				exit(1);
 			}
+			printf("input: %s", buffWrite);
+			printf("exitStr: %s", exitStr);
 			strcmpVal = strcmp(buffWrite, exitStr);
-		}
-		int shutdown_success_1 = -1;
-		shutdown_success_1 = shutdown(rqst, SHUT_RDWR);
-		if (shutdown_success_1 != 0){
-			perror("shutdown_1 error");
-			exit(1);
-		}
-		int shutdown_success_0 = -1;
-		shutdown_success_0 = shutdown(fd, SHUT_RDWR);
-		if (shutdown_success_0 != 0){
-			perror("shutdown_0 error");
-			exit(1);
+			printf("string compare values: %d\n", strcmpVal);
 		}
 	}
 
+	int shutdown_success_1 = -1;
+	shutdown_success_1 = close(rqst);
+	printf("shutdown_success_1: %d\n", shutdown_success_1);
+	if (shutdown_success_1 != 0){
+		perror("shutdown_1 error");
+		exit(1);
+	}
+	
+	// why dont you have to close both sockets
+	int shutdown_success_0 = -1;
+	shutdown_success_0 = close(fd);
+	if (shutdown_success_0 != 0){
+		perror("shutdown_0 error");
+		exit(1);
+	}
 	return 0;
 }
