@@ -1,10 +1,13 @@
+// client.c
+//
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <netdb.h>
-
+#include <arpa/inet.h>
 /*
  * Guidance from Rutgers University:
  * https://www.cs.rutgers.edu/~pxk/rutgers/notes/sockets/index.html
@@ -16,7 +19,7 @@
 
 
 int main(){
-	uint16_t port_num = 1080;
+	uint16_t port_num = 8082;
 	// name is either a hostname or an IPv4 address in standard dot notation	
 	// if name is a hostname then the hostname will be copied into the 
 	// aliases value of struct and then the IPv4 will be searched for & stored
@@ -81,20 +84,56 @@ int main(){
 	servaddr.sin_port = htons(port_num);
 	
 	hp = gethostbyname(host_name);
-	printf("got host by name\n");
 	if (!hp) {
 		fprintf(stderr, "could not obtain address of %s\n", host_name);
 		return 0;
 	}	
 
 	memcpy((void *)&servaddr.sin_addr, hp->h_addr_list[0], hp->h_length);
+	
+	printf("host name: %s\n", hp->h_name);
+	//char *inet_ntoa(struct in_addr in);
 
+	printf("host name: %s\n", inet_ntoa(servaddr.sin_addr));
+	
 	int connect_success = -1;
 	/* connect to server */
-	if ((connect_success = (connect(fd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)))) < 0) {
+	if ((connect_success = connect(fd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in))) < 0) {
+		printf("connect_success: %d\n", connect_success);
 		perror("connect failed");
 		exit(1);
 	}
+	printf("connect_success: %d\n", connect_success);
+	char buffIn[256];
+	char *exitStr = "exit\n";
+	printf("enter input: ");
+	fgets(buffIn,256,stdin);
+	printf("input: %s", buffIn);
+	int numBytesWritten = -1;
+	//numBytesWritten = write(fd, buffSend, 20);
+	numBytesWritten = write(fd, buffIn, 256);
+	printf("write success: %d\n", numBytesWritten);
+	int strcmpVal = strcmp(buffIn, exitStr);
+	printf("strcmpVal: %d\n", strcmpVal);
+	while (strcmpVal != 0){
+		fflush(stdin);
+		printf("enter input: ");
+		fgets(buffIn,256,stdin);
+		printf("input: %s", buffIn);
+		//char *buffSend = "hell0 dere do";
+		numBytesWritten = -1;
+		//numBytesWritten = write(fd, buffSend, 20);
+		numBytesWritten = write(fd, buffIn, 256);
+		printf("write success: %d\n", numBytesWritten);
+		strcmpVal = strcmp(buffIn, exitStr);
+		//printf("strcmpVal: %d\n", strcmpVal);
+		//printf("exitStr: %s", exitStr);
+		//printf("buffIn: %s", buffIn);
+	}
+	int shutdown_success = -1;
+	shutdown_success = shutdown(fd, SHUT_RDWR);
+	printf("shutdown success: %d\n", shutdown_success);
 
 	return 0;
 }
+

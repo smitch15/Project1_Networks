@@ -1,3 +1,5 @@
+// server.c
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -5,6 +7,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 /*
  * Guidance from Rutgers University:
@@ -40,10 +43,11 @@ int main(){
 	
 	memset((char *)&myaddr, 0, sizeof(myaddr));
 	myaddr.sin_family = AF_INET;
-	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	myaddr.sin_port = htons(1080);
+	myaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	//myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	myaddr.sin_port = htons(8082);
 
-	//printf("IPv4 address: %u\n", myaddr.sin_addr.s_addr);
+	printf("Server address: %s\n", inet_ntoa(myaddr.sin_addr));
 	
 	int bind_success = -1;
 	if ((bind_success = 
@@ -54,8 +58,8 @@ int main(){
 	printf("successfully binded socket to address!\n");
 	printf("bind_success: %d\n", bind_success);
 	
-	/* set the socket for listening (queue backlog of 15) */
-	if (listen(fd, 6) < 0) {
+	/* set the socket for listening (queue backlog of 10) */
+	if (listen(fd, 10) < 0) {
 		perror("listen error");
 		exit(1);
 	}
@@ -63,23 +67,44 @@ int main(){
 	socklen_t client_addr_len;
 	struct sockaddr_in client_addr;
 	int rqst;
+	
+	struct sockaddr_in sa;
+	int len=256;
+	char buffer[len];
+
+	//inet_ntop(AF_INET, &(sa.sin_addr), buffer, len);
+	//printf("address:%s\n",buffer);
 
 	// loop until you accept connections from incoming clients
 	while (1) {
-		printf("entering while loop\n");
-		rqst = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);	
-		printf("fd: %d\n", fd);
-		printf("rqst: %d\n", rqst);
-		printf("accept returned...\n");
-		while (rqst < 0) {
-            printf("client address length %d\n\n", client_addr.sin_len);
+		while ((rqst = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
+			printf("accept finished\n");
+			printf("request: %d\n", rqst);
 			if ((errno != ECHILD) && (errno != EINTR)) {
-            	perror("accept failed");
-                exit(1);
-        	} 
-        }
-		perror("error with accept");
-		exit(1);
+            			perror("accept failed");
+               			exit(1);
+        		} 
+        	}
+		// inet_ntop puts address into a readable buffer string 
+		inet_ntop(AF_INET, &(client_addr.sin_addr), buffer, len);
+		printf("address:%s\n",buffer);
+		char buffRead[256];
+		int numBytesRead;
+		
+		for (;;){
+			bzero(buffRead, sizeof(buffRead)); 
+			numBytesRead = 0;
+			printf("ready to read\n");
+			numBytesRead = read(rqst, buffRead, 256);
+			if (numBytesRead == -1){
+				perror("read error");
+				exit(1);
+			}
+			printf("numBytesRead: %d\n", numBytesRead);
+			printf("read buffer: %s", buffRead);
+			//TODO: 
+			//add the feature to read and write from both client and server
+		}
 	}
 
 	return 0;
