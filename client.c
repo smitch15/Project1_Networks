@@ -105,7 +105,9 @@ int main(){
 	}
 	printf("connect_success: %d\n", connect_success);
 	char buffIn[256];
+	char buffRead[256];
 	char *exitStr = "exit\n";
+	// write
 	printf("enter input: ");
 	fgets(buffIn,256,stdin);
 	printf("input: %s", buffIn);
@@ -115,6 +117,17 @@ int main(){
 	printf("write success: %d\n", numBytesWritten);
 	int strcmpVal = strcmp(buffIn, exitStr);
 	printf("strcmpVal: %d\n", strcmpVal);
+	int numBytesRead;
+	// read
+	bzero(buffRead, sizeof(buffRead));
+	numBytesRead = 0;
+	printf("ready to read\n");
+	numBytesRead = read(fd, buffRead, 256);
+	printf("buffRead: %s\n", buffRead);
+	if (numBytesRead == -1){
+		perror("read error");
+		exit(1);
+	}
 	while (strcmpVal != 0){
 		fflush(stdin);
 		printf("enter input: ");
@@ -129,6 +142,15 @@ int main(){
 		//printf("strcmpVal: %d\n", strcmpVal);
 		//printf("exitStr: %s", exitStr);
 		//printf("buffIn: %s", buffIn);
+		bzero(buffRead, sizeof(buffRead));
+		numBytesRead = 0;
+		printf("ready to read\n");
+		numBytesRead = read(fd, buffRead, 256);
+		printf("buffRead: %s\n", buffRead);
+		if (numBytesRead == -1){
+			perror("read error");
+			exit(1);
+		}
 	}
 	int shutdown_success = -1;
 	shutdown_success = shutdown(fd, SHUT_RDWR);

@@ -90,8 +90,11 @@ int main(){
 		printf("address:%s\n",buffer);
 		char buffRead[256];
 		int numBytesRead;
-		
-		for (;;){
+		char buffWrite[256];
+		char *exitStr = "exit\n";
+		int strcmpVal = 5;
+		int numBytesWritten = -1;
+		while (strcmpVal != 0){
 			bzero(buffRead, sizeof(buffRead)); 
 			numBytesRead = 0;
 			printf("ready to read\n");
@@ -104,6 +107,28 @@ int main(){
 			printf("read buffer: %s", buffRead);
 			//TODO: 
 			//add the feature to read and write from both client and server
+			printf("enter input: ");
+			fgets(buffWrite, 256, stdin);
+			printf("input: %s\n", buffWrite);
+			numBytesWritten = write(rqst, buffWrite, 256);
+			printf("write success: %d\n", numBytesWritten);
+			if (numBytesWritten == -1) {
+				perror("write error");
+				exit(1);
+			}
+			strcmpVal = strcmp(buffWrite, exitStr);
+		}
+		int shutdown_success_1 = -1;
+		shutdown_success_1 = shutdown(rqst, SHUT_RDWR);
+		if (shutdown_success_1 != 0){
+			perror("shutdown_1 error");
+			exit(1);
+		}
+		int shutdown_success_0 = -1;
+		shutdown_success_0 = shutdown(fd, SHUT_RDWR);
+		if (shutdown_success_0 != 0){
+			perror("shutdown_0 error");
+			exit(1);
 		}
 	}
 
