@@ -19,13 +19,14 @@
 
 
 int main(){
+	int numBytesRead;
 	uint16_t port_num = 8082;
 	// name is either a hostname or an IPv4 address in standard dot notation	
 	// if name is a hostname then the hostname will be copied into the 
 	// aliases value of struct and then the IPv4 will be searched for & stored
 	const char *host_name = "localhost";
 	uint32_t name_t = 0;	
-
+	fd_set rd_fds;
 	printf("hello world\n");
 	// here we're going to create a socket
 	// it's like you just bought a phone, but it doesn't have a number yet
@@ -83,6 +84,10 @@ int main(){
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_port = htons(port_num);
 	
+
+	//TODO:
+	// change this to get hostbyaddress so I can manually input the 
+	// address and connect
 	hp = gethostbyname(host_name);
 	if (!hp) {
 		fprintf(stderr, "could not obtain address of %s\n", host_name);
@@ -108,6 +113,54 @@ int main(){
 	char buffRead[256];
 	char *exitStr = "exit\n";
 	int strcmpVal = -1;
+	int numBytesWritten;
+	// read/write block goes here
+	/*
+	FD_ZERO(&rd_fds);
+    FD_SET(0, &rd_fds);
+    FD_SET(fd, &rd_fds);
+	*/
+	while (strcmpVal != 0){
+		//printf("strcmpVal: %d\n", strcmpVal);
+		//printf("exitStr: %s", exitStr);
+		//printf("buffIn: %s", buffIn);
+
+		fflush(stdin);
+		printf("enter input: ");
+		fgets(buffIn,256,stdin);
+		printf("input: %s", buffIn);
+		//char *buffSend = "hell0 dere do";
+		numBytesWritten = -1;
+		//numBytesWritten = write(fd, buffSend, 20);
+		numBytesWritten = write(fd, buffIn, 256);
+		printf("write success: %d\n", numBytesWritten);
+		strcmpVal = strcmp(buffIn, exitStr);
+
+		if (strcmpVal == 0)	break;
+		bzero(buffRead, sizeof(buffRead));
+		numBytesRead = 0;
+		printf("ready to read\n");
+		numBytesRead = read(fd, buffRead, 256);
+		printf("buffRead: %s\n", buffRead);
+		if (numBytesRead == -1){
+			perror("read error");
+			exit(1);
+		}
+		printf("client not waiting\n\n");		
+		
+	}
+	int shutdown_success = -1;
+	shutdown_success = close(fd);
+	printf("shutdown success: %d\n", shutdown_success);
+	return 0;
+}
+
+
+
+
+
+
+/*
 	// write
 	printf("enter input: ");
 	fgets(buffIn,256,stdin);
@@ -136,34 +189,7 @@ int main(){
 		perror("read error");
 		exit(1);
 	}
-	while (strcmpVal != 0){
-		fflush(stdin);
-		printf("enter input: ");
-		fgets(buffIn,256,stdin);
-		printf("input: %s", buffIn);
-		//char *buffSend = "hell0 dere do";
-		numBytesWritten = -1;
-		//numBytesWritten = write(fd, buffSend, 20);
-		numBytesWritten = write(fd, buffIn, 256);
-		printf("write success: %d\n", numBytesWritten);
-		strcmpVal = strcmp(buffIn, exitStr);
-		if (strcmpVal == 0)	break;
-		//printf("strcmpVal: %d\n", strcmpVal);
-		//printf("exitStr: %s", exitStr);
-		//printf("buffIn: %s", buffIn);
-		bzero(buffRead, sizeof(buffRead));
-		numBytesRead = 0;
-		printf("ready to read\n");
-		numBytesRead = read(fd, buffRead, 256);
-		printf("buffRead: %s\n", buffRead);
-		if (numBytesRead == -1){
-			perror("read error");
-			exit(1);
-		}
-	}
-	int shutdown_success = -1;
-	shutdown_success = close(fd);
-	printf("shutdown success: %d\n", shutdown_success);
-	return 0;
-}
+
+*/
+
 
