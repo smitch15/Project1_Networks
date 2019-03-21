@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
 						// inet_ntop puts address into a readable buffer string 
 						inet_ntop(AF_INET, &(client_addr.sin_addr), buffer, len);
 						printf("address:%s\n",buffer);
-a						// add new file descriptor to the set
+						// add new file descriptor to the set
 						FD_SET(rqst, &readfds);
 						if (rqst > max_sd) {
 								max_sd = rqst;
