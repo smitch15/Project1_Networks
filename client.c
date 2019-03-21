@@ -18,13 +18,14 @@
 // step 3a. connect to a server from client
 
 
-int main(){
+int main(int argc, char *argv[]){
 	int numBytesRead;
 	uint16_t port_num = 8082;
 	// name is either a hostname or an IPv4 address in standard dot notation	
 	// if name is a hostname then the hostname will be copied into the 
 	// aliases value of struct and then the IPv4 will be searched for & stored
-	const char *host_name = "localhost";
+	const char *host_name = "StevenMitchell";
+	const char *host_ip = argv[1];//"192.168.1.5";
 	uint32_t name_t = 0;	
 	fd_set rd_fds;
 	printf("hello world\n");
@@ -62,7 +63,6 @@ int main(){
 	printf("successfully binded socket to address!\n");
 	printf("bind_success: %d\n", bind_success);
 	
-	// TODO: 
 	// step 3a. connect to a server from client
 	// going to use the connect function here
 	// we created a socket that knows where it's grounded
@@ -80,26 +80,31 @@ int main(){
 	struct sockaddr_in servaddr;    /* server address */
 
 	/* fill in the server's address and data */
-	memset((char*)&servaddr, 0, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
+	memset((char*)&servaddr, 0, sizeof(servaddr)); // clear server socket address struct
+	
+	servaddr.sin_family = AF_INET;				 
 	servaddr.sin_port = htons(port_num);
 	
 
-	//TODO:
 	// change this to get hostbyaddress so I can manually input the 
 	// address and connect
-	hp = gethostbyname(host_name);
+	struct in_addr ip_addr_struct;
+	if (!inet_aton(host_ip, &ip_addr_struct))
+		perror("can't parse IP address");
+
+	hp = gethostbyaddr((const void *)&ip_addr_struct, sizeof(ip_addr_struct), AF_INET);
+	//hp = gethostbyname(host_name);
 	if (!hp) {
-		fprintf(stderr, "could not obtain address of %s\n", host_name);
+		printf("could not obtain address");
 		return 0;
 	}	
-
+	// copy the data from the host's address to the server address' struct
 	memcpy((void *)&servaddr.sin_addr, hp->h_addr_list[0], hp->h_length);
 	
-	printf("host name: %s\n", hp->h_name);
+	//printf("host name: %s\n", hp->h_name);
 	//char *inet_ntoa(struct in_addr in);
 
-	printf("host name: %s\n", inet_ntoa(servaddr.sin_addr));
+	printf("host address: %s\n", inet_ntoa(servaddr.sin_addr));
 	
 	int connect_success = -1;
 	/* connect to server */
@@ -114,12 +119,8 @@ int main(){
 	char *exitStr = "exit\n";
 	int strcmpVal = -1;
 	int numBytesWritten;
-	// read/write block goes here
-	/*
-	FD_ZERO(&rd_fds);
-    FD_SET(0, &rd_fds);
-    FD_SET(fd, &rd_fds);
-	*/
+	
+	// read/write communication with server goes here
 	while (strcmpVal != 0){
 		//printf("strcmpVal: %d\n", strcmpVal);
 		//printf("exitStr: %s", exitStr);
@@ -149,6 +150,7 @@ int main(){
 		printf("client not waiting\n\n");		
 		
 	}
+
 	int shutdown_success = -1;
 	shutdown_success = close(fd);
 	printf("shutdown success: %d\n", shutdown_success);

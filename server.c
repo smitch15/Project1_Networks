@@ -16,8 +16,8 @@
  *
  */
 
-int main(){
-		printf("hello world\n");
+int main(int argc, char *argv[]){
+		//printf("hello world\n");
 		// here we're going to create a socket
 		// it's like you just bought a phone, but it doesn't have a number yet
 		// that's what bind() is for ;)
@@ -28,7 +28,7 @@ int main(){
 				exit(1);
 		}
 		printf("socket successfully created!\n");
-		printf("socket num: %d\n", fd);
+		//printf("socket num: %d\n", fd);
 		// have to assign a socket address struct to the socket 
 		// ie let's give the phone a number to be reached at/reach others
 		// for the ip network we are using, we are assigning a port number
@@ -41,15 +41,20 @@ int main(){
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &sockoptval, sizeof(int));
 
 		struct sockaddr_in myaddr;
-
+		const char *server_address = argv[1];//"192.168.1.5";
+		printf("server address : %s\n", argv[1]);
+		const char *server_address_b = "127.0.0.1";
 		memset((char *)&myaddr, 0, sizeof(myaddr));
 		myaddr.sin_family = AF_INET;
-		myaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		myaddr.sin_addr.s_addr = inet_addr(server_address);
 		//myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 		myaddr.sin_port = htons(8082);
 
-		printf("Server address: %s\n", inet_ntoa(myaddr.sin_addr));
+		//printf("Server address: %s\n", inet_ntoa(myaddr.sin_addr));
+		char host_name[256];
+		gethostname(host_name, sizeof(host_name));
 
+		printf("Server name: %s\n", host_name);
 		int bind_success = -1;
 		if ((bind_success = 
 								bind(fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)){
@@ -145,28 +150,12 @@ int main(){
 						// inet_ntop puts address into a readable buffer string 
 						inet_ntop(AF_INET, &(client_addr.sin_addr), buffer, len);
 						printf("address:%s\n",buffer);
-
+a						// add new file descriptor to the set
 						FD_SET(rqst, &readfds);
 						if (rqst > max_sd) {
 								max_sd = rqst;
 						}
-						/*
-						// write to client
-						printf("enter input: ");
-						fgets(buffWrite, 256, stdin);
-						//printf("input: %s\n", buffWrite);
-						numBytesWritten = write(rqst, buffWrite, 256);
-						printf("write success: %d\n", numBytesWritten);
-						if (numBytesWritten == -1) {
-						perror("write error");
-						exit(1);
-						}
-						//printf("input: %s", buffWrite);
-						//printf("exitStr: %s", exitStr);
-						strcmpVal = strcmp(buffWrite, exitStr);
-						if (strcmpVal == 0)	break;
-						printf("string compare values: %d\n", strcmpVal);
-						 */
+						
 						// read from client
 						bzero(buffRead, sizeof(buffRead)); 
 						numBytesRead = 0;
@@ -176,14 +165,14 @@ int main(){
 								perror("read error");
 								exit(1);
 						}
-						printf("numBytesRead: %d\n", numBytesRead);
-						printf("read buffer: %s", buffRead);
+						//printf("numBytesRead: %d\n", numBytesRead);
+						//printf("read buffer: %s", buffRead);
 						if (numBytesRead > 0){
-								// write
+								// write to client only if read one message
 								fflush(stdin);
 								printf("enter input: ");
 								fgets(buffWrite,256,stdin);
-								printf("input: %s", buffWrite);
+								//printf("input: %s", buffWrite);
 								//char *buffSend = "hell0 dere do";
 								numBytesWritten = -1;
 								numBytesWritten = write(rqst, buffWrite, 256);
@@ -192,10 +181,10 @@ int main(){
 								strcmpVal = strcmp(buffWrite, exitStr);
 						}					
 						for (i = 0; i < max_clients; i++){   
-								//if position is empty  
+								//if position is empty add socket to client socket array 
 								if(client_socket[i] == 0 ){   
 										client_socket[i] = rqst;   
-										printf("RQST ADDED TO LIST OF CLIENT SOCKETS: %d\n\n\n" , rqst);   
+										//printf("RQST ADDED TO LIST OF CLIENT SOCKETS: %d\n\n\n" , rqst);   
 										break;   
 								} 
 						}
@@ -205,7 +194,7 @@ int main(){
 				for (i = 0; i < max_clients; i++){   
 						sd = client_socket[i];   
 						//printf("1");
-						if (sd != 0)	printf("sd set to: %d\n\n\n", sd);
+						if (sd != 0)	printf("active sd: %d\n", sd);
 						//printf(" FD_ISSET(sd, &readfds) is: %d\n", FD_ISSET(sd, &readfds));
 						if (FD_ISSET(sd, &readfds)){   
 								//Check if it was for closing , and also read the  
@@ -217,10 +206,10 @@ int main(){
 								bzero(buffRead, sizeof(buffRead)); 
 								numBytesRead = 0;
 								printf("ready to read\n");
-
+								// wait for a read operation, unless it doesn't come continue
 								pfd.fd = sd; // your socket handler 
 								pfd.events = POLLIN;
-								ret = poll(&pfd, 1, 100); // 1 second for timeout
+								ret = poll(&pfd, 1, 100); // .1 second for timeout
 								switch (ret) {
 									case -1:
 										// Error
@@ -239,24 +228,37 @@ int main(){
 										exit(1);
 								}
 								printf("numBytesRead: %d\n", numBytesRead);
+								// if something is read, then write back, unless socket is closed
+								// then handle the closed socket
 								if (numBytesRead > 0){
 										printf("read buffer: %s", buffRead);
-										fflush(stdin);
-										printf("enter input: ");
-										fgets(buffWrite,256,stdin);
-										printf("input: %s", buffWrite);
-										//char *buffSend = "hell0 dere do";
-										numBytesWritten = -1;
-										//numBytesWritten = write(fd, buffSend, 20);
-										numBytesWritten = write(sd, buffWrite, 256);
-										printf("write success: %d\n", numBytesWritten);
-										strcmpVal = strcmp(buffWrite, exitStr);
+										if ((strcmp(buffRead, exitStr)) == 0 ){
+												printf("client socket successfully closed\n\n");
+												FD_CLR(sd, &readfds);
+												int close_success = close(sd);  
+												if (close_success < 0){
+														perror("closing error");
+														exit(1);
+												} 
+												client_socket[i] = 0;   
+										}else{ 
+												fflush(stdin);
+												printf("enter input: ");
+												fgets(buffWrite,256,stdin);
+												printf("input: %s", buffWrite);
+												//char *buffSend = "hell0 dere do";
+												numBytesWritten = -1;
+												//numBytesWritten = write(fd, buffSend, 20);
+												numBytesWritten = write(sd, buffWrite, 256);
+												printf("write success: %d\n", numBytesWritten);
+												strcmpVal = strcmp(buffWrite, exitStr);
+										}
 								}
 						}   
 				}
 				//printf("5");
 		}
-
+		
 		// why dont you have to close both sockets
 		int shutdown_success_0 = -1;
 		shutdown_success_0 = close(fd);
@@ -266,11 +268,26 @@ int main(){
 		}
 		return 0;
 }
+
+
+
 // TODO:
 // handle closed connections with sockets, remove from fd_set and also close() the socket
+// 		-- done
 // handle diconnection from client
+// 		-- done
 // handle manual input address, make sure it works with two separate computers
+// 1. print address of server
+// 2. run client with argv[1] as ip address string
+// 3. have the port number predetermined
+// 4. test and should work, use mom's mac
+// handle closing the clients when the server closes
+// 1. find a way to check if the socket is still active/open
+// 2. if it's not, exit the while loop and let the program close itself, socket and all
+// 1. if you read 'exit' from the server, exit the same way you would for writing it
 // comment the code
+// 1. go through, explain and clean it up
+// 2. clean up the print statements, make it pretty
 
 //incoming message  
 /*
